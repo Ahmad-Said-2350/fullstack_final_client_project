@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signIn, signUp } from "@/lib/auth-client";
+import {Description, Label, Radio, RadioGroup} from "@heroui/react";
 import { FiMail, FiLock, FiUser, FiEye, FiEyeOff, FiAlertCircle, FiCheckCircle, FiLoader } from "react-icons/fi";
 import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
@@ -18,7 +19,7 @@ const SignUpPage = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [role, setRole] = useState("seeker");
+  const [role, setRole] = useState("Job Seeker");
   const [status, setStatus] = useState(null); // { type: "success" | "error", message: "" }
   const [fieldErrors, setFieldErrors] = useState({});
 
@@ -129,8 +130,8 @@ const SignUpPage = () => {
             }}
           >
             {[
-              { value: "seeker", label: "Job Seeker" },
-              { value: "recruiter", label: "Recruiter" },
+              { value: "Job Seeker", label: "Job Seeker" },
+              { value: "Recruiter", label: "Recruiter" },
             ].map((r) => (
               <button
                 key={r.value}
@@ -282,8 +283,7 @@ const SignUpPage = () => {
                 </p>
               )}
             </div>
-
-            {/* Submit */}
+{/* Submit */}
             <button
               type="submit"
               disabled={loading}

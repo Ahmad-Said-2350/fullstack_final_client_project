@@ -71,11 +71,11 @@ const SignInPage = () => {
   };
 
   const handleGoogle = async () => {
-    await signIn.social({ provider: "google", callbackURL: "/" });
+    await signIn.social({ provider: "google", callbackURL: "/dashboard" });
   };
 
   const handleGithub = async () => {
-    await signIn.social({ provider: "github", callbackURL: "/" });
+    await signIn.social({ provider: "github", callbackURL: "/dashboard" });
   };
 
   const inputStyle = (field) => ({

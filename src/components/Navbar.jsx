@@ -3,8 +3,9 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import logo from "@/assets/logo.png"
-
+import { useRouter } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
+import logo from "@/assets/logo.png";
 
 const navLinks = [
   { label: "Browse Jobs", href: "/jobs" },
@@ -14,6 +15,20 @@ const navLinks = [
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const router = useRouter();
+
+  const { data: session, isPending } = authClient.useSession();
+  console.log(session)
+
+  const handleSignOut = async () => {
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push("/");
+        },
+      },
+    });
+  };
 
   return (
     <div className="w-full sticky top-0 z-50 px-3 pt-3 bg-transparent">
@@ -24,7 +39,7 @@ const Navbar = () => {
           border: "1px solid rgba(255, 255, 255, 0.10)",
         }}
       >
-        {/* Left — Logo only */}
+        {/* Left — Logo */}
         <Link href="/">
           <Image
             src={logo}
@@ -36,9 +51,9 @@ const Navbar = () => {
           />
         </Link>
 
-        {/* Right — Nav Links + Divider + Sign In + Get Started */}
+        {/* Right — Desktop */}
         <div className="hidden md:flex items-center gap-6">
-          
+
           {navLinks.map((link) => (
             <Link
               key={link.label}
@@ -52,19 +67,51 @@ const Navbar = () => {
           {/* Divider */}
           <div className="w-px h-4 bg-white/20" />
 
-          <Link
-            href="/sign-in"
-            className="text-indigo-400 hover:text-indigo-300 text-sm transition-colors duration-200"
-          >
-            Sign In
-          </Link>
+          {/* Conditional Rendering */}
+          {isPending ? (
+            <div
+              className="w-20 h-8 rounded-lg animate-pulse"
+              style={{ background: "rgba(255,255,255,0.06)" }}
+            />
+          ) : session ? (
+            <div className="flex items-center gap-3">
+              {/* Text Avatar — no image */}
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-2 text-sm text-white/70 hover:text-white transition-colors duration-200"
+              >
+                <div
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                  style={{ background: "linear-gradient(135deg, #6366f1, #7c3aed)" }}
+                >
+                  {session.user.name?.charAt(0).toUpperCase()}
+                </div>
+                <span>{session.user.name?.split(" ")[0]}</span>
+              </Link>
 
-          <Link
-            href="/sign-up"
-            className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-5 py-2 rounded-lg transition-all duration-200"
-          >
-            Get Started
-          </Link>
+              <button
+                onClick={handleSignOut}
+                className="text-sm text-red-400 hover:text-red-300 transition-colors duration-200"
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <>
+              <Link
+                href="/sign-in"
+                className="text-indigo-400 hover:text-indigo-300 text-sm transition-colors duration-200"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/sign-up"
+                className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-5 py-2 rounded-lg transition-all duration-200"
+              >
+                Get Started
+              </Link>
+            </>
+          )}
 
         </div>
 
@@ -106,21 +153,51 @@ const Navbar = () => {
               {link.label}
             </Link>
           ))}
+
           <div className="w-full h-px bg-white/10" />
-          <Link
-            href="/sign-in"
-            className="text-indigo-400 text-sm"
-            onClick={() => setIsMenuOpen(false)}
-          >
-            Sign In
-          </Link>
-          <Link
-            href="/sign-up"
-            className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-5 py-2 rounded-lg text-center transition-all duration-200"
-            onClick={() => setIsMenuOpen(false)}
-          >
-            Get Started
-          </Link>
+
+          {isPending ? (
+            <div className="w-full h-8 rounded-lg animate-pulse" style={{ background: "rgba(255,255,255,0.06)" }} />
+          ) : session ? (
+            <>
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-2 text-white/70 text-sm"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <div
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                  style={{ background: "linear-gradient(135deg, #6366f1, #7c3aed)" }}
+                >
+                  {session.user.name?.charAt(0).toUpperCase()}
+                </div>
+                {session.user.name?.split(" ")[0]} — Dashboard
+              </Link>
+              <button
+                onClick={() => { handleSignOut(); setIsMenuOpen(false); }}
+                className="text-red-400 text-sm text-left"
+              >
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/sign-in"
+                className="text-indigo-400 text-sm"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/sign-up"
+                className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-5 py-2 rounded-lg text-center transition-all duration-200"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Get Started
+              </Link>
+            </>
+          )}
         </div>
       )}
     </div>

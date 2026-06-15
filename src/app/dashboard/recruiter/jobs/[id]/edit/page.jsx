@@ -1,21 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { authClient } from "@/lib/auth-client";
-import { FiArrowLeft, FiAlertCircle, FiCheckCircle, FiLoader } from "react-icons/fi";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import { FiArrowLeft, FiAlertCircle, FiCheckCircle, FiLoader } from "react-icons/fi";
 
 const jobTypes = ["Full-time", "Part-time", "Remote", "Contract", "Internship"];
 const categories = ["Engineering", "Design", "Marketing", "Sales", "Finance", "HR", "Product", "Other"];
 const currencies = ["USD", "EUR", "GBP", "BDT"];
 
-const NewJobPage = () => {
+const EditJobPage = () => {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const { id } = useParams();
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState(null);
   const [isRemote, setIsRemote] = useState(false);
-  const { data: session } = authClient.useSession();
+  const [errors, setErrors] = useState({});
 
   const [form, setForm] = useState({
     title: "",
@@ -32,7 +34,37 @@ const NewJobPage = () => {
     benefits: "",
   });
 
-  const [errors, setErrors] = useState({});
+  // Fetch existing job data
+  useEffect(() => {
+    const fetchJob = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/jobs/${id}`);
+        const job = await res.json();
+
+        setIsRemote(job.isRemote || false);
+        setForm({
+          title: job.title || "",
+          category: job.category || "",
+          jobType: job.jobType || "",
+          salaryMin: job.salaryMin || "",
+          salaryMax: job.salaryMax || "",
+          currency: job.currency || "USD",
+          city: job.city || "",
+          country: job.country || "",
+          deadline: job.deadline ? job.deadline.slice(0, 10) : "",
+          responsibilities: job.responsibilities || "",
+          requirements: job.requirements || "",
+          benefits: job.benefits || "",
+        });
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) fetchJob();
+  }, [id]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -54,42 +86,41 @@ const NewJobPage = () => {
     return err;
   };
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
-  setStatus(null);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus(null);
 
-  const err = validate();
-  if (Object.keys(err).length > 0) {
-    setErrors(err);
-    return;
-  }
+    const err = validate();
+    if (Object.keys(err).length > 0) {
+      setErrors(err);
+      return;
+    }
 
-  setLoading(true);
-  try {
-    const payload = {
-      ...form,
-      isRemote,
-      location: isRemote ? "Remote" : `${form.city}, ${form.country}`,
-      recruiterEmail: session?.user?.email,
-      recruiterName: session?.user?.name,
-    };
+    setSaving(true);
+    try {
+      const payload = {
+        ...form,
+        isRemote,
+        location: isRemote ? "Remote" : `${form.city}, ${form.country}`,
+      };
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/jobs`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/jobs/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    if (!res.ok) throw new Error("Failed to post job");
+      if (!res.ok) throw new Error("Failed to update job");
 
-    setStatus({ type: "success", message: "Job posted successfully! Redirecting..." });
-    setTimeout(() => router.push("/dashboard/recruiter/jobs"), 2000);
-  } catch {
-    setStatus({ type: "error", message: "Something went wrong. Please try again." });
-  } finally {
-    setLoading(false);
-  }
-};
+      setStatus({ type: "success", message: "Job updated successfully! Redirecting..." });
+      setTimeout(() => router.push("/dashboard/recruiter/jobs"), 2000);
+    } catch {
+      setStatus({ type: "error", message: "Something went wrong. Please try again." });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const inputStyle = (field) => ({
     background: errors[field] ? "rgba(239,68,68,0.05)" : "rgba(255,255,255,0.04)",
     border: errors[field] ? "1px solid rgba(239,68,68,0.4)" : "1px solid rgba(255,255,255,0.08)",
@@ -109,6 +140,14 @@ const NewJobPage = () => {
     display: "block",
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen" style={{ background: "#0a0a0a" }}>
+        <FiLoader size={24} color="#6366f1" className="animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen px-6 py-8" style={{ background: "#0a0a0a" }}>
       <div className="max-w-3xl mx-auto">
@@ -123,9 +162,9 @@ const NewJobPage = () => {
             <FiArrowLeft size={15} color="rgba(255,255,255,0.6)" />
           </Link>
           <div>
-            <h1 className="text-xl font-bold text-white">Post a New Job</h1>
+            <h1 className="text-xl font-bold text-white">Edit Job</h1>
             <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>
-              Fill in the details below to publish your job listing.
+              Update your job listing details.
             </p>
           </div>
         </div>
@@ -151,28 +190,20 @@ const NewJobPage = () => {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
 
-          {/* ── Section 1: Job Info ── */}
+          {/* Section 1: Job Info */}
           <div
             className="p-6 rounded-2xl flex flex-col gap-5"
             style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}
           >
             <h2 className="text-sm font-semibold text-white">Job Information</h2>
 
-            {/* Title */}
             <div>
               <label style={labelStyle}>Job Title *</label>
-              <input
-                type="text"
-                name="title"
-                value={form.title}
-                onChange={handleChange}
-                placeholder="e.g. Senior Frontend Developer"
-                style={inputStyle("title")}
-              />
+              <input type="text" name="title" value={form.title} onChange={handleChange}
+                placeholder="e.g. Senior Frontend Developer" style={inputStyle("title")} />
               {errors.title && <p className="text-xs mt-1 flex items-center gap-1" style={{ color: "#f87171" }}><FiAlertCircle size={11} />{errors.title}</p>}
             </div>
 
-            {/* Category + Job Type */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label style={labelStyle}>Category *</label>
@@ -192,30 +223,17 @@ const NewJobPage = () => {
               </div>
             </div>
 
-            {/* Salary */}
             <div>
               <label style={labelStyle}>Salary Range *</label>
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <input
-                    type="number"
-                    name="salaryMin"
-                    value={form.salaryMin}
-                    onChange={handleChange}
-                    placeholder="Min"
-                    style={inputStyle("salaryMin")}
-                  />
+                  <input type="number" name="salaryMin" value={form.salaryMin} onChange={handleChange}
+                    placeholder="Min" style={inputStyle("salaryMin")} />
                   {errors.salaryMin && <p className="text-xs mt-1" style={{ color: "#f87171" }}>{errors.salaryMin}</p>}
                 </div>
                 <div>
-                  <input
-                    type="number"
-                    name="salaryMax"
-                    value={form.salaryMax}
-                    onChange={handleChange}
-                    placeholder="Max"
-                    style={inputStyle("salaryMax")}
-                  />
+                  <input type="number" name="salaryMax" value={form.salaryMax} onChange={handleChange}
+                    placeholder="Max" style={inputStyle("salaryMax")} />
                   {errors.salaryMax && <p className="text-xs mt-1" style={{ color: "#f87171" }}>{errors.salaryMax}</p>}
                 </div>
                 <div>
@@ -226,7 +244,6 @@ const NewJobPage = () => {
               </div>
             </div>
 
-            {/* Location */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label style={{ ...labelStyle, marginBottom: 0 }}>Location *</label>
@@ -244,19 +261,20 @@ const NewJobPage = () => {
                   <span className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>Remote</span>
                 </label>
               </div>
-              {!isRemote && (
+              {!isRemote ? (
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <input type="text" name="city" value={form.city} onChange={handleChange} placeholder="City" style={inputStyle("city")} />
+                    <input type="text" name="city" value={form.city} onChange={handleChange}
+                      placeholder="City" style={inputStyle("city")} />
                     {errors.city && <p className="text-xs mt-1" style={{ color: "#f87171" }}>{errors.city}</p>}
                   </div>
                   <div>
-                    <input type="text" name="country" value={form.country} onChange={handleChange} placeholder="Country" style={inputStyle("country")} />
+                    <input type="text" name="country" value={form.country} onChange={handleChange}
+                      placeholder="Country" style={inputStyle("country")} />
                     {errors.country && <p className="text-xs mt-1" style={{ color: "#f87171" }}>{errors.country}</p>}
                   </div>
                 </div>
-              )}
-              {isRemote && (
+              ) : (
                 <div
                   className="px-4 py-3 rounded-xl text-sm"
                   style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)", color: "#a5b4fc" }}
@@ -266,7 +284,6 @@ const NewJobPage = () => {
               )}
             </div>
 
-            {/* Deadline */}
             <div>
               <label style={labelStyle}>Application Deadline *</label>
               <input type="date" name="deadline" value={form.deadline} onChange={handleChange} style={inputStyle("deadline")} />
@@ -274,52 +291,34 @@ const NewJobPage = () => {
             </div>
           </div>
 
-          {/* ── Section 2: Job Description ── */}
+          {/* Section 2: Job Description */}
           <div
             className="p-6 rounded-2xl flex flex-col gap-5"
             style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}
           >
             <h2 className="text-sm font-semibold text-white">Job Description</h2>
 
-            {/* Responsibilities */}
             <div>
               <label style={labelStyle}>Responsibilities *</label>
-              <textarea
-                name="responsibilities"
-                value={form.responsibilities}
-                onChange={handleChange}
-                placeholder="List the key responsibilities..."
-                rows={4}
-                style={{ ...inputStyle("responsibilities"), resize: "vertical" }}
-              />
+              <textarea name="responsibilities" value={form.responsibilities} onChange={handleChange}
+                placeholder="List the key responsibilities..." rows={4}
+                style={{ ...inputStyle("responsibilities"), resize: "vertical" }} />
               {errors.responsibilities && <p className="text-xs mt-1 flex items-center gap-1" style={{ color: "#f87171" }}><FiAlertCircle size={11} />{errors.responsibilities}</p>}
             </div>
 
-            {/* Requirements */}
             <div>
               <label style={labelStyle}>Requirements *</label>
-              <textarea
-                name="requirements"
-                value={form.requirements}
-                onChange={handleChange}
-                placeholder="List the required skills and experience..."
-                rows={4}
-                style={{ ...inputStyle("requirements"), resize: "vertical" }}
-              />
+              <textarea name="requirements" value={form.requirements} onChange={handleChange}
+                placeholder="List the required skills and experience..." rows={4}
+                style={{ ...inputStyle("requirements"), resize: "vertical" }} />
               {errors.requirements && <p className="text-xs mt-1 flex items-center gap-1" style={{ color: "#f87171" }}><FiAlertCircle size={11} />{errors.requirements}</p>}
             </div>
 
-            {/* Benefits */}
             <div>
               <label style={labelStyle}>Benefits <span style={{ color: "rgba(255,255,255,0.25)" }}>(optional)</span></label>
-              <textarea
-                name="benefits"
-                value={form.benefits}
-                onChange={handleChange}
-                placeholder="Health insurance, remote work, stock options..."
-                rows={3}
-                style={{ ...inputStyle("benefits"), resize: "vertical" }}
-              />
+              <textarea name="benefits" value={form.benefits} onChange={handleChange}
+                placeholder="Health insurance, remote work, stock options..." rows={3}
+                style={{ ...inputStyle("benefits"), resize: "vertical" }} />
             </div>
           </div>
 
@@ -327,14 +326,14 @@ const NewJobPage = () => {
           <div className="flex items-center gap-3 pb-8">
             <button
               type="submit"
-              disabled={loading}
+              disabled={saving}
               className="flex items-center justify-center gap-2 px-8 py-3 rounded-xl text-sm font-semibold text-white transition-all duration-200 hover:opacity-90"
               style={{
-                background: loading ? "rgba(99,102,241,0.5)" : "linear-gradient(135deg, #6366f1, #7c3aed)",
-                cursor: loading ? "not-allowed" : "pointer",
+                background: saving ? "rgba(99,102,241,0.5)" : "linear-gradient(135deg, #6366f1, #7c3aed)",
+                cursor: saving ? "not-allowed" : "pointer",
               }}
             >
-              {loading ? <><FiLoader size={15} className="animate-spin" /> Posting...</> : "Post Job"}
+              {saving ? <><FiLoader size={15} className="animate-spin" /> Saving...</> : "Save Changes"}
             </button>
             <Link
               href="/dashboard/recruiter/jobs"
@@ -351,4 +350,4 @@ const NewJobPage = () => {
   );
 };
 
-export default NewJobPage;
+export default EditJobPage;

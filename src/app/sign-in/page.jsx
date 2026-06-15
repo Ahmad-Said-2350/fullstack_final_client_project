@@ -51,7 +51,7 @@ const SignInPage = () => {
     const { error } = await signIn.email({
       email,
       password,
-      callbackURL: "/",
+      callbackURL: "/dashboard",
     });
 
     if (error) {

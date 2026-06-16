@@ -1,186 +1,124 @@
-import React from "react";
-import Link from "next/link";
-import { FiMapPin, FiDollarSign, FiArrowRight } from "react-icons/fi";
-import { MdWorkOutline } from "react-icons/md";
+"use client";
 
-const jobs = [
-  {
-    id: 1,
-    title: "Frontend Developer",
-    description: "Showcase your commitment to diversity and inclusion by highlighting initiatives",
-    location: "New York, USA",
-    type: "Hybrid",
-    salary: "€25–€40/hour",
-  },
-  {
-    id: 2,
-    title: "Frontend Developer",
-    description: "Showcase your commitment to diversity and inclusion by highlighting initiatives",
-    location: "New York, USA",
-    type: "Hybrid",
-    salary: "€25–€40/hour",
-  },
-  {
-    id: 3,
-    title: "Frontend Developer",
-    description: "Showcase your commitment to diversity and inclusion by highlighting initiatives",
-    location: "New York, USA",
-    type: "Hybrid",
-    salary: "€25–€40/hour",
-  },
-  {
-    id: 4,
-    title: "Frontend Developer",
-    description: "Showcase your commitment to diversity and inclusion by highlighting initiatives",
-    location: "New York, USA",
-    type: "Hybrid",
-    salary: "€25–€40/hour",
-  },
-  {
-    id: 5,
-    title: "Frontend Developer",
-    description: "Showcase your commitment to diversity and inclusion by highlighting initiatives",
-    location: "New York, USA",
-    type: "Hybrid",
-    salary: "€25–€40/hour",
-  },
-  {
-    id: 6,
-    title: "Frontend Developer",
-    description: "Showcase your commitment to diversity and inclusion by highlighting initiatives",
-    location: "New York, USA",
-    type: "Hybrid",
-    salary: "€25–€40/hour",
-  },
-];
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { FiMapPin, FiBriefcase, FiDollarSign, FiArrowRight, FiLoader } from "react-icons/fi";
+
+const formatSalary = (job) => {
+  if (!job?.salaryMin && !job?.salaryMax) return "Not disclosed";
+  const currency = job.currency || "USD";
+  return `${currency} ${job.salaryMin || 0}–${job.salaryMax || 0}`;
+};
 
 const FeaturedJobs = () => {
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/jobs/featured`);
+        const data = await res.json();
+        setJobs(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchJobs();
+  }, []);
+
   return (
-    <section className="w-full py-20 px-4">
-      <div className="max-w-5xl mx-auto flex flex-col items-center">
+    <section className="w-full px-4 py-20 flex flex-col items-center">
 
-        {/* Section Label */}
-        <div className="flex items-center gap-2 mb-4">
-          <span style={{ color: "#6366f1", fontSize: "10px" }}>■</span>
-          <span
-            className="text-xs tracking-widest uppercase font-medium"
-            style={{ color: "rgba(255,255,255,0.45)" }}
-          >
-            Smart Job Discovery
+      {/* Header */}
+      <div className="text-center mb-12">
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <span style={{ width: "6px", height: "6px", background: "#6366f1", borderRadius: "1px" }} />
+          <span className="text-xs font-semibold tracking-wide" style={{ color: "rgba(255,255,255,0.4)" }}>
+            SMART JOB DISCOVERY
           </span>
-          <span style={{ color: "#6366f1", fontSize: "10px" }}>■</span>
+          <span style={{ width: "6px", height: "6px", background: "#6366f1", borderRadius: "1px" }} />
         </div>
-
-        {/* Heading */}
-        <h2
-          className="font-bold text-white text-center mb-12"
-          style={{ fontSize: "clamp(1.8rem, 4vw, 2.8rem)", lineHeight: "1.25", maxWidth: "480px" }}
-        >
-          The roles you  never find by searching
+        <h2 className="text-3xl sm:text-4xl font-extrabold text-white leading-tight">
+          The roles you never <br /> find by searching
         </h2>
+      </div>
 
-        {/* Jobs Grid */}
-        <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
+      {/* Content */}
+      {loading ? (
+        <div className="flex items-center justify-center py-10">
+          <FiLoader size={22} color="#6366f1" className="animate-spin" />
+        </div>
+      ) : jobs.length === 0 ? (
+        <p className="text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>
+          No jobs available right now. Check back soon!
+        </p>
+      ) : (
+        <div className="w-full max-w-6xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {jobs.map((job) => (
-            <div
-              key={job.id}
-              className="flex flex-col justify-between p-5 rounded-2xl transition-all duration-200 hover:border-white/20"
-              style={{
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                minHeight: "200px",
-              }}
+            <Link
+              key={job._id}
+              href={`/jobs/${job._id}`}
+              className="flex flex-col p-5 rounded-2xl transition-all duration-200 hover:border-white/15"
+              style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}
             >
-              {/* Top — Title + Description */}
-              <div className="flex flex-col gap-2 mb-4">
-                <h3
-                  className="font-bold text-white"
-                  style={{ fontSize: "1.1rem" }}
-                >
-                  {job.title}
-                </h3>
-                <p
-                  className="text-xs leading-relaxed"
-                  style={{ color: "rgba(255,255,255,0.4)" }}
-                >
-                  {job.description}
-                </p>
+              {/* Title + Company */}
+              <h3 className="text-white font-bold text-base mb-2">{job.title}</h3>
+              <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.4)" }}>
+                {job.companyName}
+              </p>
+
+              {/* Tags */}
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                {job.location && (
+                  <span
+                    className="flex items-center gap-1 text-xs font-medium px-3 py-1 rounded-full"
+                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.55)" }}
+                  >
+                    <FiMapPin size={11} /> {job.location}
+                  </span>
+                )}
+                {job.jobType && (
+                  <span
+                    className="flex items-center gap-1 text-xs font-medium px-3 py-1 rounded-full"
+                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.55)" }}
+                  >
+                    <FiBriefcase size={11} /> {job.jobType}
+                  </span>
+                )}
               </div>
 
-              {/* Middle — Tags */}
-              <div className="flex flex-wrap gap-2 mb-4">
-                {/* Location */}
-                <div
-                  className="flex items-center gap-1 px-2 py-1 rounded-full text-xs"
-                  style={{
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    color: "rgba(255,255,255,0.5)",
-                  }}
-                >
-                  <FiMapPin size={11} />
-                  <span>{job.location}</span>
-                </div>
-
-                {/* Type */}
-                <div
-                  className="flex items-center gap-1 px-2 py-1 rounded-full text-xs"
-                  style={{
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    color: "rgba(255,255,255,0.5)",
-                  }}
-                >
-                  <MdWorkOutline size={11} />
-                  <span>{job.type}</span>
-                </div>
-
-                {/* Salary */}
-                <div
-                  className="flex items-center gap-1 px-2 py-1 rounded-full text-xs"
-                  style={{
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    color: "rgba(255,255,255,0.5)",
-                  }}
-                >
-                  <FiDollarSign size={11} />
-                  <span>{job.salary}</span>
-                </div>
-              </div>
+              {/* Salary */}
+              <span
+                className="flex items-center gap-1 text-xs font-medium px-3 py-1 rounded-full self-start mb-4"
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.55)" }}
+              >
+                <FiDollarSign size={11} /> {formatSalary(job)}
+              </span>
 
               {/* Divider */}
-              <div
-                className="w-full mb-4"
-                style={{ height: "1px", background: "rgba(255,255,255,0.06)" }}
-              />
+              <div style={{ height: "1px", background: "rgba(255,255,255,0.06)", marginBottom: "12px" }} />
 
-              {/* Bottom — Apply Now */}
-              <Link
-                href={`/jobs/${job.id}`}
-                className="flex items-center gap-1 text-sm font-medium transition-colors duration-200 hover:gap-2"
-                style={{ color: "rgba(255,255,255,0.7)" }}
-              >
-                Apply Now
-                <FiArrowRight size={14} />
-              </Link>
-            </div>
+              {/* Apply Now */}
+              <span className="flex items-center gap-2 text-sm font-semibold text-white">
+                Apply Now <FiArrowRight size={14} />
+              </span>
+            </Link>
           ))}
         </div>
+      )}
 
-        {/* View All Button */}
-        <button
-          className="px-6 py-3 rounded-xl text-sm font-medium transition-all duration-200 hover:bg-white/10"
-          style={{
-            background: "transparent",
-            border: "1px solid rgba(255,255,255,0.15)",
-            color: "rgba(255,255,255,0.7)",
-          }}
-        >
-          View all job open
-        </button>
+      {/* View all */}
+      <Link
+        href="/jobs"
+        className="mt-10 px-6 py-3 rounded-xl text-sm font-semibold text-white transition-all duration-200 hover:opacity-90"
+        style={{ background: "linear-gradient(135deg, #6366f1, #7c3aed)" }}
+      >
+        View All Jobs
+      </Link>
 
-      </div>
     </section>
   );
 };

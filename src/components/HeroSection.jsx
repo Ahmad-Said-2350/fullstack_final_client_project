@@ -1,136 +1,105 @@
-import React from "react";
-import { FiSearch, FiMapPin } from "react-icons/fi";
+"use client";
 
-const trendingTags = [
-  { label: "Trending Position", plain: true },
-  { label: "Product Designer", plain: false },
-  { label: "AI Engineering", plain: false },
-  { label: "Dev-ops Engineer", plain: false },
-];
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { FiSearch, FiMapPin, FiBriefcase } from "react-icons/fi";
+
+const trendingTags = ["Product Designer", "AI Engineering", "Dev-ops Engineer"];
 
 const HeroSection = () => {
-  return (
-    <section className="w-full flex flex-col items-center justify-center px-4 pt-20 pb-16 text-center">
+  const router = useRouter();
+  const [search, setSearch] = useState("");
+  const [location, setLocation] = useState("");
 
-      {/* Badge — with lines on both sides */}
-      <div className="flex items-center  mb-8">
-        <div style={{ width: "40px", height: "1px", background: "rgba(255,255,255,0.2)" }} />
-        <div
-          className="flex items-center gap-2 px-4 py-[6px] rounded-full"
-          style={{
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.12)",
-          }}
-        >
-          <span className="text-sm">💼</span>
-          <span className="text-xs font-bold tracking-widest" style={{ color: "rgba(255,255,255,0.9)" }}>
-            50,000+
-          </span>
-          <span className="text-xs tracking-widest uppercase" style={{ color: "rgba(255,255,255,0.4)" }}>
-            New Jobs This Month
-          </span>
-        </div>
-        <div style={{ width: "40px", height: "1px", background: "rgba(255,255,255,0.2)" }} />
+  const handleSearch = (e) => {
+    e.preventDefault();
+    const params = new URLSearchParams();
+    if (search) params.append("search", search);
+    if (location) params.append("location", location);
+    router.push(`/jobs?${params.toString()}`);
+  };
+
+  const handleTagClick = (tag) => {
+    router.push(`/jobs?search=${encodeURIComponent(tag)}`);
+  };
+
+  return (
+    <section className="w-full flex flex-col items-center text-center px-4 py-20">
+
+      {/* Badge */}
+      <div
+        className="flex items-center gap-2 px-4 py-2 rounded-full mb-8"
+        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+      >
+        <FiBriefcase size={14} color="#f87171" />
+        <span className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.5)" }}>
+          50,000+ <span style={{ color: "rgba(255,255,255,0.35)", fontWeight: "400" }}>NEW JOBS THIS MONTH</span>
+        </span>
       </div>
 
-      {/* Heading */}
-      <h1
-        className="font-bold leading-tight mb-5 text-white"
-        style={{
-          fontSize: "clamp(2.2rem, 5vw, 3.5rem)",
-          maxWidth: "680px",
-        }}
-      >
-        Find Your Dream Job Today
+      {/* Headline */}
+      <h1 className="text-4xl sm:text-6xl font-extrabold text-white leading-tight mb-6">
+        Find Your Dream Job <br /> Today
       </h1>
 
       {/* Subheadline */}
-      <p
-        className="mb-10"
-        style={{
-          fontSize: "clamp(0.875rem, 2vw, 0.95rem)",
-          color: "rgba(255,255,255,0.45)",
-          maxWidth: "460px",
-          lineHeight: "1.7",
-        }}
-      >
+      <p className="max-w-xl text-sm sm:text-base mb-10" style={{ color: "rgba(255,255,255,0.4)" }}>
         HireLoop connects top talent with world-class companies. Browse thousands of curated opportunities and land your next role — faster.
       </p>
 
-     {/* Search Bar */}
-      <div
-        className="flex items-center w-full mb-6 overflow-hidden"
-        style={{
-          maxWidth: "580px",
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid rgba(255,255,255,0.12)",
-          borderRadius: "12px",
-        }}
+      {/* Search Bar */}
+      <form
+        onSubmit={handleSearch}
+        className="w-full max-w-2xl flex flex-col sm:flex-row items-stretch gap-2 p-2 rounded-2xl mb-5"
+        style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}
       >
-        {/* Job Input */}
-        <div className="flex items-center gap-2 flex-1 px-4 py-3">
-          <FiSearch size={16} color="rgba(255,255,255,0.35)" />
+        <div className="flex items-center gap-2 flex-1 px-3">
+          <FiSearch size={15} color="rgba(255,255,255,0.3)" />
           <input
             type="text"
             placeholder="Job title, skill or company"
-            className="bg-transparent outline-none w-full text-sm"
-            style={{ color: "rgba(255,255,255,0.8)" }}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="bg-transparent outline-none text-sm w-full py-2 text-white placeholder:text-white/30"
           />
         </div>
 
-        {/* Divider */}
         <div
-          style={{
-            width: "1px",
-            height: "20px",
-            background: "rgba(255,255,255,0.12)",
-            flexShrink: 0,
-          }}
+          className="hidden sm:block"
+          style={{ width: "1px", background: "rgba(255,255,255,0.08)" }}
         />
 
-        {/* Location Input */}
-        <div className="flex items-center gap-2 flex-1 px-4 py-3">
-          <FiMapPin size={16} color="rgba(255,255,255,0.35)" />
+        <div className="flex items-center gap-2 flex-1 px-3">
+          <FiMapPin size={15} color="rgba(255,255,255,0.3)" />
           <input
             type="text"
             placeholder="Location or Remote"
-            className="bg-transparent outline-none w-full text-sm"
-            style={{ color: "rgba(255,255,255,0.8)" }}
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            className="bg-transparent outline-none text-sm w-full py-2 text-white placeholder:text-white/30"
           />
         </div>
 
-        {/* Search Button */}
         <button
-          className="flex items-center justify-center transition-all duration-200"
-          style={{
-            width: "44px",
-            height: "44px",
-            margin: "4px",
-            borderRadius: "8px",
-            background: "#6366f1",
-            flexShrink: 0,
-          }}
+          type="submit"
+          className="flex items-center justify-center w-12 h-12 rounded-xl flex-shrink-0 self-end sm:self-center transition-all duration-200 hover:opacity-90"
+          style={{ background: "linear-gradient(135deg, #6366f1, #7c3aed)" }}
         >
-          <FiSearch size={17} color="#ffffff" />
+          <FiSearch size={16} color="#ffffff" />
         </button>
-      </div>
-
-
+      </form>
 
       {/* Trending Tags */}
       <div className="flex flex-wrap items-center justify-center gap-2">
-        {trendingTags.map(({ label, plain }) => (
+        <span className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>Trending Position</span>
+        {trendingTags.map((tag) => (
           <button
-            key={label}
-            className="text-xs px-3 py-[5px] rounded-full transition-all duration-200"
-            style={{
-              color: plain ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.65)",
-              background: plain ? "transparent" : "rgba(255,255,255,0.05)",
-              border: plain ? "none" : "1px solid rgba(255,255,255,0.12)",
-              fontWeight: plain ? "400" : "500",
-            }}
+            key={tag}
+            onClick={() => handleTagClick(tag)}
+            className="text-xs font-medium px-4 py-2 rounded-full transition-all duration-200 hover:bg-white/10"
+            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)" }}
           >
-            {label}
+            {tag}
           </button>
         ))}
       </div>
@@ -140,8 +109,3 @@ const HeroSection = () => {
 };
 
 export default HeroSection;
-
-
-
-
-

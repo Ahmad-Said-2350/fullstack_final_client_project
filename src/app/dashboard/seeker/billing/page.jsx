@@ -4,8 +4,13 @@ import { useState, useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import {
-  FiZap, FiStar, FiLoader, FiCheckCircle,
-  FiAlertCircle, FiCreditCard, FiCalendar
+  FiZap,
+  FiStar,
+  FiLoader,
+  FiCheckCircle,
+  FiAlertCircle,
+  FiCreditCard,
+  FiX,
 } from "react-icons/fi";
 import { MdWorkspacePremium } from "react-icons/md";
 
@@ -43,7 +48,7 @@ const planConfig = {
 };
 
 export default function BillingPage() {
-  const { data: session } = authClient.useSession();
+  const { data: session, isPending } = authClient.useSession();
   const router = useRouter();
 
   const [planData, setPlanData] = useState(null);
@@ -51,12 +56,14 @@ export default function BillingPage() {
   const [upgradeLoading, setUpgradeLoading] = useState(null);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [msg, setMsg] = useState(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   useEffect(() => {
     if (!session?.user?.email) return;
     // eslint-disable-next-line react-hooks/immutability
     fetchPlan();
-  }, [session]);
+    // eslint-disable-next-line react-hooks/immutability
+  }, [session?.user?.email]);
 
   const fetchPlan = async () => {
     try {
@@ -81,11 +88,16 @@ export default function BillingPage() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: session.user.email, plan: planId }),
+          body: JSON.stringify({
+            email: session.user.email,
+            plan: planId,
+            role: session?.user?.role || "Job Seeker",
+          }),
         }
       );
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
+      if (!res.ok) throw new Error(data.message || "Failed to create checkout session");
       window.location.href = data.url;
     } catch (err) {
       setMsg({ type: "error", text: err.message || "Something went wrong." });
@@ -94,22 +106,32 @@ export default function BillingPage() {
   };
 
   const handleCancel = async () => {
-    if (!confirm("Are you sure you want to cancel your subscription? You'll be downgraded to Free.")) return;
     setCancelLoading(true);
     setMsg(null);
+
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/cancel-subscription`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: session.user.email }),
+          body: JSON.stringify({
+            email: session.user.email,
+            role: session?.user?.role || "Job Seeker",
+          }),
         }
       );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
-      setMsg({ type: "success", text: "Subscription cancelled. You've been moved to the Free plan." });
-      fetchPlan();
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || "Failed to cancel subscription.");
+
+      setMsg({
+        type: "success",
+        text: "Subscription cancelled. You've been moved to the Free plan.",
+      });
+
+      setShowCancelModal(false);
+      await fetchPlan();
     } catch (err) {
       setMsg({ type: "error", text: err.message || "Failed to cancel subscription." });
     } finally {
@@ -117,7 +139,7 @@ export default function BillingPage() {
     }
   };
 
-  if (loading) {
+  if (isPending || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen" style={{ background: "#0a0a0a" }}>
         <FiLoader size={22} color="#6366f1" className="animate-spin" />
@@ -131,21 +153,19 @@ export default function BillingPage() {
   const used = planData?.appliedThisMonth || 0;
   const limit = planData?.applyLimit || 3;
 
-const usagePercent = limit >= 999 ? 30 : Math.min((used / limit) * 100, 100);
-const barColor =
-  currentPlan === "premium"
-    ? "linear-gradient(90deg, #f59e0b, #fbbf24)"   // ← Premium: golden
-    : currentPlan === "pro"
-    ? "linear-gradient(90deg, #6366f1, #8b5cf6)"   // ← Pro: purple
-    : usagePercent >= 90
-    ? "#f87171"                                      // ← Free near limit: red
-    : "linear-gradient(90deg, #6366f1, #8b5cf6)";  // ← Free normal: purple
-  
+  const usagePercent = limit >= 999 ? 30 : Math.min((used / limit) * 100, 100);
+  const barColor =
+    currentPlan === "premium"
+      ? "linear-gradient(90deg, #f59e0b, #fbbf24)"
+      : currentPlan === "pro"
+      ? "linear-gradient(90deg, #6366f1, #8b5cf6)"
+      : usagePercent >= 90
+      ? "#f87171"
+      : "linear-gradient(90deg, #6366f1, #8b5cf6)";
+
   return (
     <div className="min-h-screen px-4 md:px-8 py-8" style={{ background: "#0a0a0a" }}>
       <div className="max-w-3xl mx-auto">
-
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-xl font-bold text-white">Billing & Plan</h1>
           <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>
@@ -153,7 +173,6 @@ const barColor =
           </p>
         </div>
 
-        {/* Toast */}
         {msg && (
           <div
             className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm mb-6"
@@ -168,7 +187,6 @@ const barColor =
           </div>
         )}
 
-        {/* Current Plan Card */}
         <div
           className="rounded-2xl p-6 mb-6"
           style={{ background: config.bg, border: `1px solid ${config.border}` }}
@@ -197,11 +215,9 @@ const barColor =
               </div>
             </div>
 
-            {/* Cancel button for paid plans */}
             {currentPlan !== "free" && (
               <button
-                onClick={handleCancel}
-                disabled={cancelLoading}
+                onClick={() => setShowCancelModal(true)}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-all"
                 style={{
                   background: "rgba(239,68,68,0.1)",
@@ -209,13 +225,11 @@ const barColor =
                   color: "#f87171",
                 }}
               >
-                {cancelLoading && <FiLoader size={12} className="animate-spin" />}
                 Cancel Subscription
               </button>
             )}
           </div>
 
-          {/* Usage bar */}
           <div className="mt-5">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
@@ -225,31 +239,24 @@ const barColor =
                 {used} / {limit >= 999 ? "∞" : limit}
               </span>
             </div>
-            <div
-              className="w-full h-1.5 rounded-full overflow-hidden"
-              style={{ background: "rgba(255,255,255,0.06)" }}
-            >
+            <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
               <div
                 className="h-full rounded-full transition-all"
-               style={{
-  width: `${limit >= 999 ? 30 : usagePercent}%`,
-  background: currentPlan === "premium" || currentPlan === "pro"
-    ? "transparent"
-    : barColor,
-  backgroundImage: currentPlan === "premium"
-    ? "linear-gradient(90deg, #f59e0b, #fbbf24)"
-    : currentPlan === "pro"
-    ? "linear-gradient(90deg, #6366f1, #8b5cf6)"
-    : "none",
-  backgroundColor: currentPlan === "free"
-    ? (usagePercent >= 90 ? "#f87171" : "#6366f1")
-    : "transparent",
-}}
+                style={{
+                  width: `${limit >= 999 ? 30 : usagePercent}%`,
+                  background: currentPlan === "premium" || currentPlan === "pro" ? "transparent" : barColor,
+                  backgroundImage:
+                    currentPlan === "premium"
+                      ? "linear-gradient(90deg, #f59e0b, #fbbf24)"
+                      : currentPlan === "pro"
+                      ? "linear-gradient(90deg, #6366f1, #8b5cf6)"
+                      : "none",
+                  backgroundColor: currentPlan === "free" ? (usagePercent >= 90 ? "#f87171" : "#6366f1") : "transparent",
+                }}
               />
             </div>
           </div>
 
-          {/* Features */}
           <div className="mt-5 flex flex-wrap gap-2">
             {config.features.map((f) => (
               <span
@@ -267,7 +274,6 @@ const barColor =
           </div>
         </div>
 
-        {/* Upgrade Options */}
         {currentPlan !== "premium" && (
           <div
             className="rounded-2xl p-6 mb-6"
@@ -279,7 +285,6 @@ const barColor =
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              {/* Pro */}
               {currentPlan === "free" && (
                 <div
                   className="flex-1 rounded-xl p-4"
@@ -288,7 +293,9 @@ const barColor =
                   <div className="flex items-center gap-2 mb-2">
                     <FiStar size={14} color="#818cf8" />
                     <span className="text-white font-semibold text-sm">Pro</span>
-                    <span className="text-xs ml-auto font-bold" style={{ color: "#818cf8" }}>$19/mo</span>
+                    <span className="text-xs ml-auto font-bold" style={{ color: "#818cf8" }}>
+                      $19/mo
+                    </span>
                   </div>
                   <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.35)" }}>
                     30 applications/month + priority visibility
@@ -305,7 +312,6 @@ const barColor =
                 </div>
               )}
 
-              {/* Premium */}
               <div
                 className="flex-1 rounded-xl p-4"
                 style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.2)" }}
@@ -313,7 +319,9 @@ const barColor =
                 <div className="flex items-center gap-2 mb-2">
                   <MdWorkspacePremium size={14} color="#f59e0b" />
                   <span className="text-white font-semibold text-sm">Premium</span>
-                  <span className="text-xs ml-auto font-bold" style={{ color: "#f59e0b" }}>$39/mo</span>
+                  <span className="text-xs ml-auto font-bold" style={{ color: "#f59e0b" }}>
+                    $39/mo
+                  </span>
                 </div>
                 <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.35)" }}>
                   Unlimited applications + all features
@@ -332,7 +340,6 @@ const barColor =
           </div>
         )}
 
-        {/* Payment Info */}
         <div
           className="rounded-2xl p-5"
           style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}
@@ -354,6 +361,66 @@ const barColor =
           </button>
         </div>
 
+        {showCancelModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+            <div
+              className="absolute inset-0"
+              style={{ background: "rgba(0,0,0,0.7)" }}
+              onClick={() => !cancelLoading && setShowCancelModal(false)}
+            />
+            <div
+              className="relative w-full max-w-md rounded-3xl p-6"
+              style={{
+                background: "#111111",
+                border: "1px solid rgba(255,255,255,0.08)",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.45)",
+              }}
+            >
+              <button
+                onClick={() => !cancelLoading && setShowCancelModal(false)}
+                className="absolute top-4 right-4 text-white/50 hover:text-white"
+              >
+                <FiX size={18} />
+              </button>
+
+              <div
+                className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+                style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)" }}
+              >
+                <FiAlertCircle size={28} color="#f87171" />
+              </div>
+
+              <h2 className="text-xl font-bold text-white text-center mb-2">Cancel Subscription?</h2>
+              <p className="text-sm text-center mb-6" style={{ color: "rgba(255,255,255,0.55)" }}>
+                This will downgrade your account to the Free plan and update the database.
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowCancelModal(false)}
+                  disabled={cancelLoading}
+                  className="flex-1 py-3 rounded-xl text-sm font-semibold transition-all hover:bg-white/10"
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    color: "rgba(255,255,255,0.7)",
+                  }}
+                >
+                  Keep Plan
+                </button>
+                <button
+                  onClick={handleCancel}
+                  disabled={cancelLoading}
+                  className="flex-1 py-3 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2"
+                  style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}
+                >
+                  {cancelLoading && <FiLoader size={14} className="animate-spin" />}
+                  {cancelLoading ? "Cancelling..." : "Yes, Cancel"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

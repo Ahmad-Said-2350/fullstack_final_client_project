@@ -35,7 +35,9 @@ const statusStyle = (status) => {
 const formatDate = (dateStr) => {
   if (!dateStr) return "—";
   return new Date(dateStr).toLocaleDateString("en-US", {
-    month: "short", day: "numeric", year: "numeric",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
   });
 };
 
@@ -95,8 +97,6 @@ export default function SeekerDashboardHome() {
 
   return (
     <div className="flex flex-col min-h-screen" style={{ background: "#0a0a0a" }}>
-
-      {/* ── Top Header ── */}
       <div
         className="w-full flex items-center justify-between px-6 py-3 sticky top-0 z-10"
         style={{ background: "#0f0f0f", borderBottom: "1px solid rgba(255,255,255,0.06)" }}
@@ -137,10 +137,7 @@ export default function SeekerDashboardHome() {
         </div>
       </div>
 
-      {/* ── Main ── */}
       <div className="flex-1 px-4 md:px-6 py-8 flex flex-col gap-6">
-
-        {/* Welcome + Plan */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-bold text-white">Welcome back, {userName} 👋</h1>
@@ -173,7 +170,6 @@ export default function SeekerDashboardHome() {
           </div>
         ) : (
           <>
-            {/* ── Stat Cards ── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {statCards.map(({ icon: Icon, label, value }) => (
                 <div
@@ -198,7 +194,6 @@ export default function SeekerDashboardHome() {
               ))}
             </div>
 
-            {/* ── Apply Usage Bar ── */}
             <div
               className="p-5 rounded-2xl"
               style={{
@@ -224,29 +219,36 @@ export default function SeekerDashboardHome() {
                 )}
               </div>
 
-              {/* Progress bar */}
               <div
                 className="w-full h-2 rounded-full overflow-hidden"
                 style={{ background: "rgba(255,255,255,0.07)" }}
               >
                 <div
-                 style={{
-  width: stats?.plan === "premium" ? "40%" : `${applyPercent}%`,
-  background:
-    stats?.plan === "premium"
-      ? "linear-gradient(90deg, #f59e0b, #fbbf24)"
-      : stats?.plan === "pro"
-      ? "linear-gradient(90deg, #6366f1, #8b5cf6)"
-      : applyPercent >= 90
-      ? "linear-gradient(90deg, #ef4444, #dc2626)"
-      : applyPercent >= 70
-      ? "linear-gradient(90deg, #f59e0b, #d97706)"
-      : "linear-gradient(90deg, #6366f1, #7c3aed)",
-}}
+                  className="h-full rounded-full transition-all duration-500 ease-out"
+                  style={{
+                    width: `${applyPercent}%`,
+                    background:
+                      stats?.plan === "premium"
+                        ? "linear-gradient(90deg, #f59e0b, #fbbf24)"
+                        : stats?.plan === "pro"
+                        ? "linear-gradient(90deg, #6366f1, #8b5cf6)"
+                        : applyPercent >= 90
+                        ? "linear-gradient(90deg, #ef4444, #dc2626)"
+                        : applyPercent >= 70
+                        ? "linear-gradient(90deg, #f59e0b, #d97706)"
+                        : "linear-gradient(90deg, #6366f1, #7c3aed)",
+                    boxShadow:
+                      stats?.plan === "premium"
+                        ? "0 0 14px rgba(245,158,11,0.25)"
+                        : stats?.plan === "pro"
+                        ? "0 0 14px rgba(99,102,241,0.25)"
+                        : applyPercent >= 90
+                        ? "0 0 14px rgba(239,68,68,0.25)"
+                        : "0 0 14px rgba(99,102,241,0.18)",
+                  }}
                 />
               </div>
 
-              {/* Plan limits info */}
               <div className="flex items-center gap-4 mt-3 flex-wrap">
                 <span className="text-xs" style={{ color: "rgba(255,255,255,0.25)" }}>
                   Free: 3/mo
@@ -262,10 +264,7 @@ export default function SeekerDashboardHome() {
               </div>
             </div>
 
-            {/* ── Bottom Grid ── */}
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4">
-
-              {/* Recent Applications */}
               <div
                 className="rounded-2xl overflow-hidden"
                 style={{
@@ -349,7 +348,6 @@ export default function SeekerDashboardHome() {
                 )}
               </div>
 
-              {/* Recommended Jobs */}
               <div
                 className="rounded-2xl p-5 flex flex-col gap-4"
                 style={{
@@ -430,7 +428,6 @@ export default function SeekerDashboardHome() {
                   Browse All Jobs
                 </Link>
               </div>
-
             </div>
           </>
         )}

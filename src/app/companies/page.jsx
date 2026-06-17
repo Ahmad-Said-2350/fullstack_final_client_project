@@ -83,7 +83,7 @@ const BrowseCompaniesPage = () => {
                 color: activeIndustry === tab ? "#a5b4fc" : "rgba(255,255,255,0.5)",
               }}
             >
-              {tab}
+             {tab}
             </button>
           ))}
         </div>

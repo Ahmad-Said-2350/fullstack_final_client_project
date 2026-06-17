@@ -1,9 +1,18 @@
+"use client";
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { FaFacebookF, FaLinkedinIn } from "react-icons/fa";
 import { SiPinterest } from "react-icons/si";
 import logo from "@/assets/logo.png"
+import { usePathname } from "next/navigation";
+
+
+
+
+// eslint-disable-next-line react-hooks/rules-of-hooks
+
+
 
 const footerLinks = {
   Product: [
@@ -42,7 +51,16 @@ const iconStyle = {
   flexShrink: 0,
 };
 
+
+
+
 const Footer = () => {
+const pathname = usePathname();
+if(pathname.includes("/dashboard")) {
+  return null; // Don't render the navbar on dashboard pages
+}
+
+
   return (
     <footer
       className="w-full px-6 md:px-16 pt-14 pb-6"

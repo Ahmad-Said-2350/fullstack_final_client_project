@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import logo from "@/assets/logo.png";
 
@@ -19,6 +19,12 @@ const Navbar = () => {
 
   const { data: session, isPending } = authClient.useSession();
   console.log(session)
+
+const pathname = usePathname();
+if(pathname.includes("/dashboard")) {
+  return null; // Don't render the navbar on dashboard pages
+}
+
 
   const handleSignOut = async () => {
     await authClient.signOut({

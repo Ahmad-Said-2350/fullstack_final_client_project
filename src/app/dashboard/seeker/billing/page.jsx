@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect} from "react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import {
@@ -13,6 +13,7 @@ import {
   FiX,
 } from "react-icons/fi";
 import { MdWorkspacePremium } from "react-icons/md";
+import RecruiterBillingPage from "../../recruiter/billing/page";
 
 const planConfig = {
   free: {
@@ -47,7 +48,7 @@ const planConfig = {
   },
 };
 
-export default function BillingPage() {
+ export default function BillingPage() {
   const { data: session, isPending } = authClient.useSession();
   const router = useRouter();
 
@@ -425,3 +426,5 @@ export default function BillingPage() {
     </div>
   );
 }
+
+

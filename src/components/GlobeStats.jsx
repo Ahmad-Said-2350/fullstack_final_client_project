@@ -63,7 +63,7 @@ const GlobeStats = () => {
             }}
           />
 
-          {/* Assisting text — desktop only, inside globe */}
+      
           <div
             className="absolute left-0 right-0 text-center px-4"
             style={{ top: "52%" }}

@@ -13,7 +13,7 @@ export const auth = betterAuth({
     emailAndPassword: { 
     enabled: true, 
   },
-  trustedOrigins:process.env.BETTER_AUTH_URL,
+  trustedOrigins:"https://fullstack-final-client-project.vercel.app/",
   socialProviders: {
         google: { 
             clientId: process.env.GOOGLE_CLIENT_ID , 
